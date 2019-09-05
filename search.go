@@ -22,7 +22,7 @@ type MinimaxableGameboard interface {
 	 * The function can return an empty slice if the game has reached
 	 * terminal state.
 	 */
-	NextBoards(float64 color) []MinimaxableGameboard
+	NextBoards(color float64) []MinimaxableGameboard
 
 	/* Return true if the game has reached a terminal state */
 	Finished() bool
