@@ -1,4 +1,5 @@
 /* The game of Ataxx implemented with minimax */
+package main
 
 /* Ataxx is a board game, played on a 7 by 7 grid and included as a puzzle in
  * the 7th guest.
@@ -75,3 +76,12 @@
  * remain). Upon which the player with the most pieces wins. As the grid
  * contains an odd number of cells, there will always be a victor.
  */
+
+/* The 7 by 7 board.
+ *
+ * We use the following integer values.
+ *  0 -> empty cell
+ *  1 -> player X
+ * -1 -> player O
+ */
+type AtaxxBoard [7][7]int
