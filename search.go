@@ -10,7 +10,7 @@ type MinimaxableGameboard interface {
 	 *
 	 * Other than that any non-Nan value is fine.
 	 */
-	Score() float64
+	Score() int
 
 	/* Return an array of all valid boards a given player can move to given the
 	 * current game state.
@@ -22,7 +22,7 @@ type MinimaxableGameboard interface {
 	 * The function can return an empty slice if the game has reached
 	 * terminal state.
 	 */
-	NextBoards(color float64) []MinimaxableGameboard
+	NextBoards(color int) []MinimaxableGameboard
 
 	/* Return true if the game has reached a terminal state */
 	Finished() bool
@@ -44,7 +44,7 @@ type MinimaxableGameboard interface {
  * Which mostly means we exploit the color value of the player
  * to spare branches. But since we're using floats, it doesn't really matter.
  */
-func Minimax(game MinimaxableGameboard, float64 color, int depth) (maxBoard MinimaxableGameboard, maxScore float64) {
+func Minimax(game MinimaxableGameboard, color int, depth int) (maxBoard MinimaxableGameboard, maxScore int) {
 	boards := game.NextBoards(color)
 
 	/* In case the game has finish, return current game state */
@@ -99,4 +99,6 @@ func Minimax(game MinimaxableGameboard, float64 color, int depth) (maxBoard Mini
 			}
 		}
 	}
+
+    return
 }

@@ -91,7 +91,7 @@ type AtaxxBoard [7][7]int
  * This is a simple sumation of all player pieces, since the player with the
  * most pieces wins.
  */
-func (board AtaxxBoard) Score() (score float64) {
+func (board AtaxxBoard) Score() (score int) {
 	score = 0
 
 	/* Iterate board */
@@ -100,6 +100,8 @@ func (board AtaxxBoard) Score() (score float64) {
 			score += board[y][x]
 		}
 	}
+
+    return
 }
 
 /* Return valid board states that can be reached by the given player for the
@@ -123,8 +125,8 @@ func (board AtaxxBoard) Score() (score float64) {
  *
  * In case no empty cells remain, return empty slice, signalling end of game.
  */
-func (board AtaxxBoard) NextBoards(color float64) []MinimaxableGameboard {
-	results := new([]MinimaxableGameboard)
+func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
+	results := make([]MinimaxableGameboard, 0)
 
 	hasEmptyCell := false
 
@@ -307,4 +309,6 @@ func (board AtaxxBoard) Copy() (newBoard AtaxxBoard) {
 			newBoard[y][x] = board[y][x]
 		}
 	}
+
+    return
 }
