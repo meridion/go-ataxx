@@ -57,7 +57,7 @@ type TranspositionTable interface {
 		 * the board and score return values are undefined.
 		 * the boolean "found" value should be set to false
 	*/
-	Load(game MinimaxableGameboard, maximizingPlayer bool, depth int) (MinimaxableGameboard, int, bool)
+	Load(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int) (MinimaxableGameboard, int, bool)
 
 	/* Store a board/score result to the hash table.
 		 *
@@ -69,7 +69,7 @@ type TranspositionTable interface {
 		 *  resultBoard: The board after the player has moved.
 		 *  resultScore: Calculated score heuristic for this move.
 	*/
-	Store(game MinimaxableGameboard, maximizingPlayer bool, depth int, resultBoard MinimaxableGameboard, resultScore int)
+	Store(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int, resultBoard MinimaxableGameboard, resultScore int)
 }
 
 ///* The most naive playing algorithm. Use the score heuristic to immediately
@@ -390,14 +390,15 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	/* Handle hash table in a compact Golang fashion.
 	 * Using a check at the start, and a defer to cache the function result at the end.
 	 */
-	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth)
+	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth, alpha, beta)
 	if found {
 		/* Debug hash table behaviour */
-		if true {
+		if false {
 			abBoard, abScore := AlphaBeta(game, maximizingPlayer, depth, alpha, beta)
 			if hashBoard != abBoard || hashScore != abScore {
 				fmt.Println("Input board", game, "maximizingPlayer", maximizingPlayer)
 				fmt.Println("At depth", depth)
+				fmt.Println("alpha", alpha, "beta", beta)
 				fmt.Println("hashBoard", hashBoard, "hashScore", hashScore)
 				fmt.Println("vs.")
 				fmt.Println("abBoard", abBoard, "abScore", abScore)
@@ -412,7 +413,7 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	 */
 	defer func() {
 		//fmt.Println("bestBoard", bestBoard, "bestScore", bestScore)
-		transposition.Store(game, maximizingPlayer, depth, bestBoard, bestScore)
+		transposition.Store(game, maximizingPlayer, depth, alpha, beta, bestBoard, bestScore)
 	}()
 
 	color := 1
