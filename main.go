@@ -17,15 +17,16 @@ func main() {
 	}
 
 	board := NewGame()
+	fmt.Println("Start of game")
 	board.Print()
 
 	turn := 1
 	color := 1
 
-	for i, newBoard := range board.NextBoards(color) {
-		fmt.Println("Next position", i)
-		(newBoard.(AtaxxBoard)).Print()
-	}
+	//for i, newBoard := range board.NextBoards(color) {
+	//	fmt.Println("Next position", i)
+	//	(newBoard.(AtaxxBoard)).Print()
+	//}
 
 	/* Self play until finished. */
 	for !board.Finished() {
@@ -36,8 +37,8 @@ func main() {
 			currentPlayer = "O"
 		}
 
-		fmt.Println("Turn ", turn, currentPlayer, "moves")
-		newBoard, _ := Minimax(board, color, 0)
+		fmt.Println("Turn", turn, currentPlayer, "moves")
+		newBoard, _ := Minimax(board, color, 3)
 
 		board = newBoard.(AtaxxBoard)
 		board.Print()
