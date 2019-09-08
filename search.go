@@ -1,9 +1,9 @@
 /* An abstract implementation of the minimax algorithm */
 package main
 
-import (
-	"fmt"
-)
+//import (
+//	"fmt"
+//)
 
 type MinimaxableGameboard interface {
 	/* Function that returns a heuristic estimate on the board positions
@@ -37,36 +37,39 @@ type MinimaxableGameboard interface {
  */
 type TranspositionTable interface {
 	/* Load a known board from the hash table.
-	 *
-	 * The key used to lookup the cached values is comprised of the
-	 * combination of the board state and the player to move next:
-	 *  game: The current game state.
-	 *  maximizingPlayer: The player about to move.
-	 *
-	 * The function has three return values:
-	 *  resultBoard: The board after the player has moved.
-	 *  resultScore: Calculated score heuristic for this move.
-	 *  found: Wether or not the specified key is in the hash table.
-	 *
-	 * If the lookup is successful resultBoard and resultScore are set
-	 * to the stored values and "found" is set to true.
-	 *
-	 * In case this board/player combination is not know.
-	 * the board and score return values are undefined.
-	 * the boolean "found" value should be set to false
-	 */
-	Load(game MinimaxableGameboard, maximizingPlayer bool) (MinimaxableGameboard, int, bool)
+		 *
+		 * The key used to lookup the cached values is comprised of the
+		 * combination of the board state, the player to move next
+	     * and the search depth, as this influences the heuristic score:
+		 *  game: The current game state.
+		 *  maximizingPlayer: The player about to move.
+	     *  depth: Search depth remaining
+		 *
+		 * The function has three return values:
+		 *  resultBoard: The board after the player has moved.
+		 *  resultScore: Calculated score heuristic for this move.
+		 *  found: Wether or not the specified key is in the hash table.
+		 *
+		 * If the lookup is successful resultBoard and resultScore are set
+		 * to the stored values and "found" is set to true.
+		 *
+		 * In case this board/player combination is not know.
+		 * the board and score return values are undefined.
+		 * the boolean "found" value should be set to false
+	*/
+	Load(game MinimaxableGameboard, maximizingPlayer bool, depth int) (MinimaxableGameboard, int, bool)
 
 	/* Store a board/score result to the hash table.
-	 *
-	 * The first two arguments form the key, which will also be used to look up:
-	 *  game: The current game state.
-	 *  maximizingPlayer: The player about to move.
-	 * the second two arguments form the value:
-	 *  resultBoard: The board after the player has moved.
-	 *  resultScore: Calculated score heuristic for this move.
-	 */
-	Store(game MinimaxableGameboard, maximizingPlayer bool, resultBoard MinimaxableGameboard, resultScore int)
+		 *
+		 * The first two arguments form the key, which will also be used to look up:
+		 *  game: The current game state.
+		 *  maximizingPlayer: The player about to move.
+	     *  depth: Search depth remaining
+		 * the second two arguments form the value:
+		 *  resultBoard: The board after the player has moved.
+		 *  resultScore: Calculated score heuristic for this move.
+	*/
+	Store(game MinimaxableGameboard, maximizingPlayer bool, depth int, resultBoard MinimaxableGameboard, resultScore int)
 }
 
 ///* The most naive playing algorithm. Use the score heuristic to immediately
@@ -387,7 +390,7 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	/* Handle hash table in a compact Golang fashion.
 	 * Using a check at the start, and a defer to cache the function result at the end.
 	 */
-	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer)
+	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth)
 	if found {
 		return hashBoard, hashScore
 	}
@@ -396,8 +399,8 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	 * Setup a save statement for when this function returns.
 	 */
 	defer func() {
-		fmt.Println("bestBoard", bestBoard, "bestScore", bestScore)
-		transposition.Store(game, maximizingPlayer, bestBoard, bestScore)
+		//fmt.Println("bestBoard", bestBoard, "bestScore", bestScore)
+		transposition.Store(game, maximizingPlayer, depth, bestBoard, bestScore)
 	}()
 
 	color := 1
@@ -438,7 +441,7 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 			}
 
 			/* Return best board available */
-			fmt.Println("maxBoard", maxBoard, "maxScore", maxScore)
+			//fmt.Println("maxBoard", maxBoard, "maxScore", maxScore)
 			return maxBoard, maxScore
 		} else { /* Handle minimizing player */
 			for i, board := range boards {
@@ -456,7 +459,7 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 					}
 				}
 			}
-			fmt.Println("minBoard", minBoard, "minScore", minScore)
+			//fmt.Println("minBoard", minBoard, "minScore", minScore)
 			return minBoard, minScore
 		}
 	}
@@ -487,11 +490,11 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 			}
 			/* Terminate if known suboptimal branch found */
 			if alpha >= beta {
-				fmt.Println("maxBoard", maxBoard, "maxScore", maxScore)
+				//fmt.Println("maxBoard", maxBoard, "maxScore", maxScore)
 				return maxBoard, maxScore
 			}
 		}
-		fmt.Println("maxBoard", maxBoard, "maxScore", maxScore)
+		//fmt.Println("maxBoard", maxBoard, "maxScore", maxScore)
 		return maxBoard, maxScore
 	} else { /* Handle minimizing player */
 		for i, board := range boards {
@@ -514,11 +517,11 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 			}
 			/* Terminate if known suboptimal branch found */
 			if alpha >= beta {
-				fmt.Println("minBoard", minBoard, "minScore", minScore)
+				//fmt.Println("minBoard", minBoard, "minScore", minScore)
 				return minBoard, minScore
 			}
 		}
-		fmt.Println("minBoard", minBoard, "minScore", minScore)
+		//fmt.Println("minBoard", minBoard, "minScore", minScore)
 		return minBoard, minScore
 	}
 }
