@@ -38,7 +38,8 @@ func main() {
 		}
 
 		fmt.Println("Turn", turn, currentPlayer, "moves")
-		newBoard, _ := Minimax(board, color, 3)
+		//newBoard, _ := Minimax(board, color, 3)
+		newBoard, _ := AlphaBeta(board, color == 1, 3, -49, 49)
 
 		board = newBoard.(AtaxxBoard)
 		board.Print()
