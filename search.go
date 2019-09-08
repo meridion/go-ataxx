@@ -1,9 +1,9 @@
 /* An abstract implementation of the minimax algorithm */
 package main
 
-//import (
-//	"fmt"
-//)
+import (
+	"fmt"
+)
 
 type MinimaxableGameboard interface {
 	/* Function that returns a heuristic estimate on the board positions
@@ -392,6 +392,18 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	 */
 	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth)
 	if found {
+		/* Debug hash table behaviour */
+		if true {
+			abBoard, abScore := AlphaBeta(game, maximizingPlayer, depth, alpha, beta)
+			if hashBoard != abBoard || hashScore != abScore {
+				fmt.Println("Input board", game, "maximizingPlayer", maximizingPlayer)
+				fmt.Println("At depth", depth)
+				fmt.Println("hashBoard", hashBoard, "hashScore", hashScore)
+				fmt.Println("vs.")
+				fmt.Println("abBoard", abBoard, "abScore", abScore)
+				panic("Not equal, terminating.")
+			}
+		}
 		return hashBoard, hashScore
 	}
 

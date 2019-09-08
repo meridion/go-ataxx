@@ -104,6 +104,7 @@ type AtaxxTransposition struct {
 }
 
 type AtaxxTranspositionResult struct {
+	key         AtaxxTransposition
 	resultBoard AtaxxBoard
 	resultScore int
 }
@@ -380,8 +381,15 @@ func (board AtaxxBoard) Print() {
 
 /* Load a previously computed board from our cache */
 func (table *AtaxxTranspositionTable) Load(game MinimaxableGameboard, maximizingPlayer bool, depth int) (MinimaxableGameboard, int, bool) {
+	key := AtaxxTransposition{game.(AtaxxBoard), maximizingPlayer, depth}
+
 	/* Maps return "zero" values, so in our case an empty board and a 0 score */
-	res, found := table.transpositionMap[AtaxxTransposition{game.(AtaxxBoard), maximizingPlayer, depth}]
+	res, found := table.transpositionMap[key]
+	if found && res.key != key {
+		fmt.Println("result key:", res.key)
+		fmt.Println("input key:", key)
+		panic("Hash table result key does not match input key")
+	}
 	return res.resultBoard, res.resultScore, found
 }
 
@@ -392,11 +400,14 @@ func (table *AtaxxTranspositionTable) Load(game MinimaxableGameboard, maximizing
  * Whenever our hash table hits the maximum size, we clear the hash table.
  */
 func (table *AtaxxTranspositionTable) Store(game MinimaxableGameboard, maximizingPlayer bool, depth int, resultBoard MinimaxableGameboard, resultScore int) {
+	key := AtaxxTransposition{game.(AtaxxBoard), maximizingPlayer, depth}
+
 	/* Clear hash table if we are about to grow past maximum size */
 	if len(table.transpositionMap) == table.maxSize {
 		table.transpositionMap = make(map[AtaxxTransposition]AtaxxTranspositionResult)
 	}
-	table.transpositionMap[AtaxxTransposition{game.(AtaxxBoard), maximizingPlayer, depth}] = AtaxxTranspositionResult{resultBoard.(AtaxxBoard), resultScore}
+
+	table.transpositionMap[key] = AtaxxTranspositionResult{key, resultBoard.(AtaxxBoard), resultScore}
 }
 
 /* Build a new table with the predefined size */
