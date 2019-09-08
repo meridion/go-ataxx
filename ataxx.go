@@ -99,8 +99,8 @@ func (board AtaxxBoard) Score() (score int) {
 	score = 0
 
 	/* Iterate board */
-	for x := 0; x < 7; x++ {
-		for y := 0; y < 7; y++ {
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
 			score += board[y][x]
 		}
 	}
@@ -132,11 +132,14 @@ func (board AtaxxBoard) Score() (score int) {
 func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 	results := make([]MinimaxableGameboard, 0)
 
+	/* This is for checking wether the entire board is full
+	 * and the game is therefore finished.
+	 */
 	hasEmptyCell := false
 
 	/* Iterate board */
-	for x := 0; x < 7; x++ {
-		for y := 0; y < 7; y++ {
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
 			fmt.Println(x, y)
 			/* Found an empty cell */
 			if board[y][x] == 0 {
@@ -164,14 +167,14 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 				 * We iterate the neighbourhood using inner x and inner y
 				 * alternatively these variables can be called x-offset and y-offset.
 				 */
-				for ix := -2; ix <= 2; ix++ {
-					/* Clamp bounds of X neighbourhood */
-					if ix+x < 0 || ix+x >= 7 {
+				for iy := -2; iy <= 2; iy++ {
+					/* Clamp bounds of Y neighbourhood */
+					if iy+y < 0 || iy+y >= 7 {
 						continue
 					}
-					for iy := -2; iy <= 2; iy++ {
-						/* Clamp bounds of Y neighbourhood */
-						if iy+y < 0 || iy+y >= 7 {
+					for ix := -2; ix <= 2; ix++ {
+						/* Clamp bounds of X neighbourhood */
+						if ix+x < 0 || ix+x >= 7 {
 							continue
 						}
 
@@ -212,12 +215,12 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 								 * neighbourhood also clamp this neighbourhood
 								 * to remain within the board.
 								 */
-								for iix := -1; iix <= 1; iix++ {
-									if x+iix < 0 || x+iix >= 7 {
+								for iiy := -1; iiy <= 1; iiy++ {
+									if y+iiy < 0 || y+iiy >= 7 {
 										continue
 									}
-									for iiy := -1; iiy <= 1; iiy++ {
-										if y+iiy < 0 || y+iiy >= 7 {
+									for iix := -1; iix <= 1; iix++ {
+										if x+iix < 0 || x+iix >= 7 {
 											continue
 										}
 										if board[y+iiy][x+iix] == -color {
@@ -248,12 +251,12 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 								 * neighbourhood also clamp this neighbourhood
 								 * to remain within the board.
 								 */
-								for iix := -1; iix <= 1; iix++ {
-									if x+iix < 0 || x+iix >= 7 {
+								for iiy := -1; iiy <= 1; iiy++ {
+									if y+iiy < 0 || y+iiy >= 7 {
 										continue
 									}
-									for iiy := -1; iiy <= 1; iiy++ {
-										if y+iiy < 0 || y+iiy >= 7 {
+									for iix := -1; iix <= 1; iix++ {
+										if x+iix < 0 || x+iix >= 7 {
 											continue
 										}
 										if board[y+iiy][x+iix] == -color {
@@ -266,9 +269,9 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 						}
 					}
 				}
-			}
-		}
-	}
+			} /* if empty */
+		} /* for x */
+	} /* for y */
 
 	/* Return same board state as singular result
 	 * in case moves remain, but current player cannot make them.
@@ -292,8 +295,8 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
  */
 func (board AtaxxBoard) Finished() bool {
 	/* Iterate board */
-	for x := 0; x < 7; x++ {
-		for y := 0; y < 7; y++ {
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
 			if board[y][x] == 0 {
 				return false
 			}
@@ -309,8 +312,8 @@ func (board AtaxxBoard) Copy() (newBoard AtaxxBoard) {
 	//newBoard = make([7][7]int
 
 	/* Iterate board */
-	for x := 0; x < 7; x++ {
-		for y := 0; y < 7; y++ {
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
 			newBoard[y][x] = board[y][x]
 		}
 	}
@@ -323,8 +326,8 @@ func NewGame() AtaxxBoard {
 	newBoard := AtaxxBoard{}
 
 	/* Iterate board */
-	for x := 0; x < 7; x++ {
-		for y := 0; y < 7; y++ {
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
 			newBoard[y][x] = 0
 		}
 	}
