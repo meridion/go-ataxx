@@ -223,8 +223,8 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 										if x+iix < 0 || x+iix >= 7 {
 											continue
 										}
-										if board[y+iiy][x+iix] == -color {
-											board[y+iiy][x+iix] = color
+										if newBoard[y+iiy][x+iix] == -color {
+											newBoard[y+iiy][x+iix] = color
 										}
 									}
 								}
@@ -259,8 +259,8 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 										if x+iix < 0 || x+iix >= 7 {
 											continue
 										}
-										if board[y+iiy][x+iix] == -color {
-											board[y+iiy][x+iix] = color
+										if newBoard[y+iiy][x+iix] == -color {
+											newBoard[y+iiy][x+iix] = color
 										}
 									}
 								}
