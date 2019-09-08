@@ -1,6 +1,10 @@
 /* The game of Ataxx implemented with minimax */
 package main
 
+import (
+	"fmt"
+)
+
 /* Ataxx is a board game, played on a 7 by 7 grid and included as a puzzle in
  * the 7th guest.
  *
@@ -101,7 +105,7 @@ func (board AtaxxBoard) Score() (score int) {
 		}
 	}
 
-    return
+	return
 }
 
 /* Return valid board states that can be reached by the given player for the
@@ -310,5 +314,45 @@ func (board AtaxxBoard) Copy() (newBoard AtaxxBoard) {
 		}
 	}
 
-    return
+	return
+}
+
+/* Return a freshly initialized game board in starting positions */
+func NewGame() AtaxxBoard {
+	newBoard := AtaxxBoard{}
+
+	/* Iterate board */
+	for x := 0; x < 7; x++ {
+		for y := 0; y < 7; y++ {
+			newBoard[y][x] = 0
+		}
+	}
+
+	/* Initialize corner positions */
+	newBoard[0][0] = 1
+	newBoard[6][6] = 1
+
+	newBoard[0][6] = -1
+	newBoard[6][0] = -1
+
+	return newBoard
+}
+
+/* Print board */
+func (board AtaxxBoard) Print() {
+	/* Iterate board */
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
+			if board[y][x] > 0 {
+				fmt.Print(" X")
+			} else if board[y][x] < 0 {
+				fmt.Print(" O")
+			} else {
+				fmt.Print(" .")
+			}
+		}
+		fmt.Printf("\n")
+	}
+
+	return
 }

@@ -100,5 +100,5 @@ func Minimax(game MinimaxableGameboard, color int, depth int) (maxBoard Minimaxa
 		}
 	}
 
-    return
+	return
 }
