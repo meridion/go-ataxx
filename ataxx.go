@@ -183,10 +183,10 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 							isSubdivision := true
 
 							/* Establish wether we are jumping or subdividing */
-							if ix < 1 || ix > 1 {
+							if ix < -1 || ix > 1 {
 								isSubdivision = false
 							}
-							if iy < 1 || iy > 1 {
+							if iy < -1 || iy > 1 {
 								isSubdivision = false
 							}
 
