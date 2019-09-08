@@ -90,6 +90,23 @@ import (
  */
 type AtaxxBoard [7][7]int
 
+/* A transposition table for storing Ataxx boards */
+type AtaxxTranspositionTable struct {
+	transpositionMap map[AtaxxTransposition]AtaxxTranspositionResult
+	maxSize          int
+}
+
+/* A single Ataxx Transposition */
+type AtaxxTransposition struct {
+	board            AtaxxBoard
+	maximizingPlayer bool
+}
+
+type AtaxxTranspositionResult struct {
+	resultBoard AtaxxBoard
+	resultScore int
+}
+
 /* Compute Ataxx score
  *
  * This is a simple sumation of all player pieces, since the player with the
@@ -358,4 +375,34 @@ func (board AtaxxBoard) Print() {
 	}
 
 	return
+}
+
+/* Load a previously computed board from our cache */
+func (table *AtaxxTranspositionTable) Load(game MinimaxableGameboard, maximizingPlayer bool) (MinimaxableGameboard, int, bool) {
+	/* Maps return "zero" values, so in our case an empty board and a 0 score */
+	res, found := table.transpositionMap[AtaxxTransposition{game.(AtaxxBoard), maximizingPlayer}]
+	return res.resultBoard, res.resultScore, found
+}
+
+/* Store a board to the cache
+ *
+ * This function is where the "magic" happens.
+ * For now use an incredibly simple replacement strategy.
+ * Whenever our hash table hits the maximum size, we clear the hash table.
+ */
+func (table *AtaxxTranspositionTable) Store(game MinimaxableGameboard, maximizingPlayer bool, resultBoard MinimaxableGameboard, resultScore int) {
+	/* Clear hash table if we are about to grow past maximum size */
+	if len(table.transpositionMap) == table.maxSize {
+		table.transpositionMap = make(map[AtaxxTransposition]AtaxxTranspositionResult)
+	}
+	table.transpositionMap[AtaxxTransposition{game.(AtaxxBoard), maximizingPlayer}] = AtaxxTranspositionResult{resultBoard.(AtaxxBoard), resultScore}
+}
+
+/* Build a new table with the predefined size */
+func NewTranspositionTable(size int) *AtaxxTranspositionTable {
+	table := AtaxxTranspositionTable{}
+	table.transpositionMap = make(map[AtaxxTransposition]AtaxxTranspositionResult)
+	table.maxSize = size
+
+	return &table
 }
