@@ -137,6 +137,7 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 	/* Iterate board */
 	for x := 0; x < 7; x++ {
 		for y := 0; y < 7; y++ {
+			fmt.Println(x, y)
 			/* Found an empty cell */
 			if board[y][x] == 0 {
 				hasEmptyCell = true
@@ -163,12 +164,12 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 				 * We iterate the neighbourhood using inner x and inner y
 				 * alternatively these variables can be called x-offset and y-offset.
 				 */
-				for ix := -2; ix <= 2; x++ {
+				for ix := -2; ix <= 2; ix++ {
 					/* Clamp bounds of X neighbourhood */
 					if ix+x < 0 || ix+x >= 7 {
 						continue
 					}
-					for iy := -2; iy <= 2; y++ {
+					for iy := -2; iy <= 2; iy++ {
 						/* Clamp bounds of Y neighbourhood */
 						if iy+y < 0 || iy+y >= 7 {
 							continue
