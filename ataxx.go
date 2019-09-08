@@ -140,7 +140,6 @@ func (board AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 	/* Iterate board */
 	for y := 0; y < 7; y++ {
 		for x := 0; x < 7; x++ {
-			fmt.Println(x, y)
 			/* Found an empty cell */
 			if board[y][x] == 0 {
 				hasEmptyCell = true

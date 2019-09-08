@@ -42,6 +42,7 @@ func main() {
 		board = newBoard.(AtaxxBoard)
 		board.Print()
 		color = -color
+		turn += 1
 	}
 
 	return
