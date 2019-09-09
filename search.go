@@ -393,9 +393,9 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth, alpha, beta)
 	if found {
 		/* Debug hash table behaviour */
-		if false {
+		if true {
 			abBoard, abScore := AlphaBeta(game, maximizingPlayer, depth, alpha, beta)
-			if hashBoard != abBoard || hashScore != abScore {
+			if *(hashBoard.(*AtaxxBoard)) != *(abBoard.(*AtaxxBoard)) || hashScore != abScore {
 				fmt.Println("Input board", game, "maximizingPlayer", maximizingPlayer)
 				fmt.Println("At depth", depth)
 				fmt.Println("alpha", alpha, "beta", beta)
@@ -409,12 +409,17 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 	}
 
 	/* In case the result was not in our hashtable.
-	 * Setup a save statement for when this function returns.
-	 */
-	defer func() {
+		 * Setup a save statement for when this function returns.
+	     *
+	     * This function takes all function arguments as its parameters to prevent
+	     * changes to these variables later on to mess with the eventual hash entry
+	     * stored. We are essentially caching function calls, and we don't want
+	     * variable changes to affect the function call cached.
+	*/
+	defer func(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int) {
 		//fmt.Println("bestBoard", bestBoard, "bestScore", bestScore)
 		transposition.Store(game, maximizingPlayer, depth, alpha, beta, bestBoard, bestScore)
-	}()
+	}(game, maximizingPlayer, depth, alpha, beta)
 
 	color := 1
 	if !maximizingPlayer {
