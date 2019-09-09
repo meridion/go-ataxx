@@ -501,8 +501,6 @@ func (board *AtaxxBitboard) NextBoards(maximizingPlayer bool) []MinimaxableGameb
 		return results
 	}
 
-	var movingPlayer, waitingPlayer SingleBitboard
-
 	var move MoveBitboard
 
 	if maximizingPlayer {
@@ -513,15 +511,25 @@ func (board *AtaxxBitboard) NextBoards(maximizingPlayer bool) []MinimaxableGameb
 		move.waitingPlayer = board.maximizingPlayer
 	}
 
-	emptyCells := ^(movingPlayer | waitingPlayer) & ((1 << 49) - 1)
+	//fmt.Println("movingPlayer")
+	//move.movingPlayer.Print()
+	//fmt.Println("waitingPlayer")
+	//move.waitingPlayer.Print()
+	emptyCells := (^(move.movingPlayer | move.waitingPlayer)) & ((1 << 49) - 1)
+	//fmt.Println("emtpyCells")
+	//emptyCells.Print()
 
 	/* Loop over all 49 possible cells (in the 7x7 bitboard) */
 	for bit := uint(0); bit < 49; bit++ {
+		//fmt.Println("bit:", bit)
+		//moveMask[bit].Print()
 		/* To know if we can make a move, we need to know 2 things:
 		 * 1. Is the cell empty? (no player pieces set to 1)
 		 * 2. Are any moving player pieces in range? (check neighbourhood mask)
 		 */
-		if (emptyCells&(1<<bit)) == 0 && movingPlayer&moveMask[bit] != 0 {
+		//(emptyCells & (1 << bit)).Print()
+		if (emptyCells&(1<<bit)) != 0 && move.movingPlayer&moveMask[bit] != 0 {
+			//fmt.Println("empty movable cell")
 			/* Compute move template.
 			 *
 			 * Since every move infects target pieces and places a piece of the
@@ -714,6 +722,24 @@ func (board *AtaxxBitboard) Print() {
 				fmt.Print(" X")
 			} else if board.minimizingPlayer&maskBit != 0 {
 				fmt.Print(" O")
+			} else {
+				fmt.Print(" .")
+			}
+		}
+		fmt.Printf("\n")
+	}
+
+	return
+}
+
+/* Print single bitboard */
+func (board SingleBitboard) Print() {
+	/* Iterate board */
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
+			maskBit := SingleBitboard(1 << uint((y)*7+x))
+			if board&maskBit != 0 {
+				fmt.Print(" #")
 			} else {
 				fmt.Print(" .")
 			}
