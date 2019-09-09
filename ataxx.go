@@ -88,7 +88,7 @@ import (
  *  1 -> player X
  * -1 -> player O
  */
-type AtaxxBoard [7][7]int
+type AtaxxBoard [7][7]int8
 
 /* A transposition table for storing Ataxx boards */
 type AtaxxTranspositionTable struct {
@@ -120,7 +120,7 @@ func (board *AtaxxBoard) Score() (score int) {
 	/* Iterate board */
 	for y := 0; y < 7; y++ {
 		for x := 0; x < 7; x++ {
-			score += board[y][x]
+			score += int(board[y][x])
 		}
 	}
 
@@ -148,8 +148,13 @@ func (board *AtaxxBoard) Score() (score int) {
  *
  * In case no empty cells remain, return empty slice, signalling end of game.
  */
-func (board *AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
+func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboard {
 	results := make([]MinimaxableGameboard, 0)
+
+	var color int8 = 1
+	if !maximizingPlayer {
+		color = -1
+	}
 
 	/* This is for checking wether the entire board is full
 	 * and the game is therefore finished.

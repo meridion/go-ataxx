@@ -26,7 +26,7 @@ type MinimaxableGameboard interface {
 	 * The function can return an empty slice if the game has reached
 	 * terminal state.
 	 */
-	NextBoards(color int) []MinimaxableGameboard
+	NextBoards(maximizingPlayer bool) []MinimaxableGameboard
 
 	/* Return true if the game has reached a terminal state */
 	Finished() bool
@@ -102,7 +102,7 @@ type TranspositionTable interface {
  * to spare branches. But since we're using floats, it doesn't really matter.
  */
 func Minimax(game MinimaxableGameboard, color int, depth int) (maxBoard MinimaxableGameboard, maxScore int) {
-	boards := game.NextBoards(color)
+	boards := game.NextBoards(color == 1)
 
 	/* In case the game has finish, return current game state */
 	if len(boards) == 0 {
@@ -178,9 +178,9 @@ func AlphaBeta(game MinimaxableGameboard, maximizingPlayer bool, depth int, alph
  * Return the best possible move a player can make based on given search depth
  * and its according score.
  *
- * color:
- *  1 -> Player A
- * -1 -> Player B
+ * maximizingPlayer:
+ * true  -> Player A
+ * false -> Player B
  *
  * depth:
  * Maximum search depth.
@@ -264,12 +264,7 @@ func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, de
 		}(game, maximizingPlayer, depth, alpha, beta)
 	}
 
-	color := 1
-	if !maximizingPlayer {
-		color = -1
-	}
-
-	boards := game.NextBoards(color)
+	boards := game.NextBoards(maximizingPlayer)
 
 	var maxBoard, minBoard MinimaxableGameboard
 	var maxScore, minScore int
