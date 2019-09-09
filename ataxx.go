@@ -90,6 +90,42 @@ import (
  */
 type AtaxxBoard [7][7]int8
 
+/* This single bitboard type allows us
+ * to define some bithacking methods
+ * on the standard uint64 type
+ */
+type SingleBitboard uint64
+
+/* The 7 by 7 bitboard
+ *
+ * Two arrays formed by bits.
+ * One 49-bit array for all maximizingPlayer pieces.
+ * One 49-bit array for all minimizingPlayer pieces.
+ *
+ * The arrays follow the same ordering as the original int array board.
+ * 7 contiguous bits are a single line of X-coords.
+ * 0 1 2 3 4 5 6
+ * 7 8 9 A B C D etc.
+ */
+type AtaxxBitboard struct {
+	maximizingPlayer SingleBitboard
+	minimizingPlayer SingleBitboard
+}
+
+/* Bitboard lookup tables */
+var moveMask, subdivideMask, jumpMask [49]SingleBitboard
+
+/* A bitboard for storing board data by player on the move
+ * instead of player strategy.
+ * This type simplifies a bit of code, and allows us to
+ * implement performing of moves disregarding wether
+ * maximizingPlayer or minimizingPlayer makes the move.
+ */
+type MoveBitboard struct {
+	movingPlayer  SingleBitboard
+	waitingPlayer SingleBitboard
+}
+
 /* A transposition table for storing Ataxx boards */
 type AtaxxTranspositionTable struct {
 	transpositionMap map[AtaxxTransposition]AtaxxTranspositionResult
@@ -280,15 +316,15 @@ func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboar
 
 							} else { /* Handle jumping */
 								/* Every jump is unique, as the piece
-																 * performing the jump leaves its original
-																 * position.
-																 * Therefore we add every jump as a new board
-																 * configuration.
-								                                 *
-								                                 * However since we have our board template set
-								                                 * up we only need to copy the template and
-								                                 * remove the piece that jumped from it.
-								*/
+								 * performing the jump leaves its original
+								 * position.
+								 * Therefore we add every jump as a new board
+								 * configuration.
+								 *
+								 * However since we have our board template set
+								 * up we only need to copy the template and
+								 * remove the piece that jumped from it.
+								 */
 								/* Copy template data */
 								newBoard := &AtaxxBoard{}
 								*newBoard = *newBoardTemplate
@@ -412,4 +448,278 @@ func NewTranspositionTable(size int) *AtaxxTranspositionTable {
 	table.maxSize = size
 
 	return &table
+}
+
+/* Score player status.
+ *
+ * Returns the heuristic board score.
+ *
+ * Since the scoring is done by subtracting the minimizing player total pieces
+ * from the maximizing player total pieces, we need to count the bits in both
+ * bit arrays.
+ */
+func (board *AtaxxBitboard) Score() int {
+	return board.maximizingPlayer.PiecesPlaced() - board.minimizingPlayer.PiecesPlaced()
+}
+
+/* Count the number of bits set in a bitboard array.
+ *
+ * In other words, the number of pieces placed within the array.
+ * For counting we use Kernighan's method:
+ * https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetNaive
+ */
+func (board SingleBitboard) PiecesPlaced() int {
+	var pieces int
+
+	/* This loop clears the least significant bit set, until no bits remain */
+	for pieces = 0; board != 0; pieces++ {
+		board &= board - 1
+	}
+
+	return pieces
+}
+
+/* Return valid board states that can be reached by the given player for the
+ * given board.
+ *
+ * This function operates on bitboards by using a precomputed lookup table
+ * containing bitboard neighbourhoods for all 49 possibly empty cells.
+ *
+ * These are then used for determining wether a move is possible, and then
+ * for efficiently computing the new board state.
+ *
+ * Arguments:
+ *  maximizingPlayer: true if the maximizingPlayer is making the move
+ *  false otherwise.
+ */
+func (board *AtaxxBitboard) NextBoards(maximizingPlayer bool) []MinimaxableGameboard {
+	results := make([]MinimaxableGameboard, 0)
+
+	/* Handle case where we are finished already */
+	if board.Finished() {
+		results = append(results, board)
+		return results
+	}
+
+	var movingPlayer, waitingPlayer SingleBitboard
+
+	var move MoveBitboard
+
+	if maximizingPlayer {
+		move.movingPlayer = board.maximizingPlayer
+		move.waitingPlayer = board.minimizingPlayer
+	} else {
+		move.movingPlayer = board.minimizingPlayer
+		move.waitingPlayer = board.maximizingPlayer
+	}
+
+	emptyCells := ^(movingPlayer | waitingPlayer) & ((1 << 49) - 1)
+
+	/* Loop over all 49 possible cells (in the 7x7 bitboard) */
+	for bit := uint(0); bit < 49; bit++ {
+		/* To know if we can make a move, we need to know 2 things:
+		 * 1. Is the cell empty? (no player pieces set to 1)
+		 * 2. Are any moving player pieces in range? (check neighbourhood mask)
+		 */
+		if (emptyCells&(1<<bit)) == 0 && movingPlayer&moveMask[bit] != 0 {
+			/* Compute move template.
+			 *
+			 * Since every move infects target pieces and places a piece of the
+			 * moving player in the empty cell, we can cache this part.
+			 */
+
+			/* Copy data */
+			newMoveTemplate := move
+
+			/* Set empty cell to piece */
+			newMoveTemplate.movingPlayer |= (1 << bit)
+
+			/* Infect surrounding cells
+			 *
+			 * First we compute all enemy pieces in range by
+			 * using the subdivide mask to gather those pieces.
+			 *
+			 * Second we add those pieces to the moving player mask
+			 * gaining control of them.
+			 *
+			 * Finally we delete those pieces from the waiting player
+			 * losing control.
+			 */
+			infectionMask := newMoveTemplate.waitingPlayer & subdivideMask[bit]
+			newMoveTemplate.movingPlayer |= infectionMask
+			newMoveTemplate.waitingPlayer &= ^infectionMask
+
+			/* Now check if this player can subdivide */
+			if move.movingPlayer&subdivideMask[bit] != 0 {
+				/* Add subdivided board to results */
+				results = append(results, newMoveTemplate.ToMinimaxBoard(maximizingPlayer))
+			}
+
+			/* Finally handle jumps, if any
+			 *
+			 * Jumps are handled by using a bit hack to fetch the LSB (least
+			 * significant bit) from the jumpingMask and clearing this
+			 * simultaneously from the computed move template (appending the
+			 * result) and from the jumpMask, creating a new LSB.
+			 *
+			 * This proces continuous until no more jump capable pieces remain
+			 * in the jump mask, and all possible board jumps have been
+			 * performed.
+			 */
+			jumpingMask := move.movingPlayer & jumpMask[bit]
+			for jumpingMask != 0 {
+				/* Fetch LSB from jumpingMask */
+				nextJump := (^jumpingMask + 1) & jumpingMask
+
+				/* Append next move board, clearing jumped piece */
+				newMove := newMoveTemplate
+				newMove.movingPlayer ^= nextJump
+				results = append(results, newMove.ToMinimaxBoard(maximizingPlayer))
+
+				/* Finally clear jumped piece from jumping mask */
+				jumpingMask ^= nextJump
+			}
+		}
+	}
+
+	return results
+}
+
+/* The game is finished if no more empty cells remain.
+ *
+ * That is, if both arrays have the first 49 bits set together, the game is
+ * over.
+ */
+func (board *AtaxxBitboard) Finished() bool {
+	return (board.maximizingPlayer | board.minimizingPlayer) == ((1 << 49) - 1)
+}
+
+/* Initialize bitboard lookup tables */
+func InitBitboards() {
+	/* Iterate board */
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
+			/* Compute cell index in mask array */
+			maskIndex := y*7 + x
+
+			/* Clear initial mask contents */
+			moveMask[maskIndex] = 0
+			subdivideMask[maskIndex] = 0
+			jumpMask[maskIndex] = 0
+
+			/* Compute mask neighbourhood
+			 *
+			 * The board has this shape:
+			 * . . . . . . .
+			 * . . . . . . .
+			 * . . . . . . .
+			 * . . . . . . .
+			 * . . . . . . .
+			 * . . . . . . .
+			 * . . . . . . .
+			 *
+			 * The masks are used to determine:
+			 * - What stones can move to the neighbourhood center
+			 * - What stones can subdivide to the neighbourhood center
+			 * - What stones can jump to the neighbourhood center
+			 *
+			 * e.g.
+			 * The different masks for the upper left corner then become
+			 *
+			 *   move mask     subdivide mask    jump mask
+			 * . M M . . . .   . S . . . . .   . . J . . . .
+			 * M M M . . . .   S S . . . . .   . . J . . . .
+			 * M M M . . . .   . . . . . . .   J J J . . . .
+			 * . . . . . . .   . . . . . . .   . . . . . . .
+			 * . . . . . . .   . . . . . . .   . . . . . . .
+			 * . . . . . . .   . . . . . . .   . . . . . . .
+			 * . . . . . . .   . . . . . . .   . . . . . . .
+			 *
+			 * The subdivide mask also doubles as a mask for determining
+			 * infected stones.
+			 */
+			for iy := -2; iy <= 2; iy++ {
+				/* Clamp bounds of Y neighbourhood */
+				if iy+y < 0 || iy+y >= 7 {
+					continue
+				}
+				for ix := -2; ix <= 2; ix++ {
+					/* Clamp bounds of X neighbourhood */
+					if ix+x < 0 || ix+x >= 7 {
+						continue
+					}
+					/* Skip neighbourhood center */
+					if ix == 0 && iy == 0 {
+						continue
+					}
+
+					/* Determine subdivision status */
+					isSubdivision := true
+					if ix < -1 || ix > 1 {
+						isSubdivision = false
+					}
+					if iy < -1 || iy > 1 {
+						isSubdivision = false
+					}
+
+					/* Compute current mask bit */
+					maskBit := SingleBitboard(1 << uint((y+iy)*7+(x+ix)))
+
+					/* Set masks */
+					moveMask[maskIndex] |= maskBit
+					if isSubdivision {
+						subdivideMask[maskIndex] |= maskBit
+					} else {
+						jumpMask[maskIndex] |= maskBit
+					}
+				}
+			}
+		}
+	}
+}
+
+/* Conversion function used for simplifying the bitboard next move computation
+ * code
+ */
+func (move MoveBitboard) ToMinimaxBoard(maximizingPlayer bool) MinimaxableGameboard {
+	minimax := AtaxxBitboard{}
+
+	if maximizingPlayer {
+		minimax.maximizingPlayer = move.movingPlayer
+		minimax.minimizingPlayer = move.waitingPlayer
+	} else {
+		minimax.maximizingPlayer = move.waitingPlayer
+		minimax.minimizingPlayer = move.movingPlayer
+	}
+
+	return &minimax
+}
+
+/* Initialize a new game, bitboard style */
+func NewBitGame() *AtaxxBitboard {
+	board := AtaxxBitboard{}
+	board.maximizingPlayer = SingleBitboard((1 << 48) | 1)
+	board.minimizingPlayer = SingleBitboard((1 << 42) | (1 << 6))
+
+	return &board
+}
+
+/* Print bitboard */
+func (board *AtaxxBitboard) Print() {
+	/* Iterate board */
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
+			maskBit := SingleBitboard(1 << uint((y)*7+x))
+			if board.maximizingPlayer|maskBit != 0 {
+				fmt.Print(" X")
+			} else if board.minimizingPlayer|maskBit != 0 {
+				fmt.Print(" O")
+			} else {
+				fmt.Print(" .")
+			}
+		}
+		fmt.Printf("\n")
+	}
+
+	return
 }

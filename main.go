@@ -16,7 +16,12 @@ func main() {
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}
 
-	board := NewGame()
+	/* Setup pre-calculated bitboard tables */
+	InitBitboards()
+
+	/* Initialize a new game board */
+	//board := NewGame()
+	board := NewBitGame()
 	fmt.Println("Start of game")
 	board.Print()
 
@@ -40,11 +45,12 @@ func main() {
 
 		fmt.Println("Turn", turn, currentPlayer, "moves")
 		//newBoard, _ := Minimax(board, color, 3)
-		//newBoard, _ := AlphaBeta(board, color == 1, 4, -49, 49)
+		newBoard, _ := AlphaBeta(board, color == 1, 4, -49, 49)
 		//newBoard, _ := AlphaBetaTransposition(board, color == 1, 4, -49, 49, NewTranspositionTable(60000))
-		newBoard, _ := AlphaBetaTransposition(board, color == 1, 4, -49, 49, transposition)
+		//newBoard, _ := AlphaBetaTransposition(board, color == 1, 4, -49, 49, transposition)
 
-		board = newBoard.(*AtaxxBoard)
+		//board = newBoard.(*AtaxxBoard)
+		board = newBoard.(*AtaxxBitboard)
 		board.Print()
 		color = -color
 		turn += 1
