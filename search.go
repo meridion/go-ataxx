@@ -162,172 +162,12 @@ func Minimax(game MinimaxableGameboard, color int, depth int) (maxBoard Minimaxa
 
 /* Minimax with alpha-beta pruning
  *
- * This algorithm will cut off further search if it has been determined
- * no better moves can be found in a certain path using current heuristics.
- *
- * Return the best possible move a player can make based on given search depth
- * and its according score.
- *
- * color:
- *  1 -> Player A
- * -1 -> Player B
- *
- * depth:
- * Maximum search depth.
- * 0 meaning, do not recurse and simply evaluate all current moves
- * heuristically choosing the best among them.
- * alpha-beta:
- * Alpha-beta pruning works by keeping tabs on the best moves available to both players.
- * alpha: The best score player A can achieve to current knowlegde.
- *        When starting search this move should be A's worst possible score.
- *        In A's case that mostly likely means a low or even negative value.
- * beta: The best score player B can achieve to current knowledge.
- *        When starting search this move should be B's worst possible score.
- *        In B's case that mostly likely means a positive, possibly high value.
- *
- * player A is the score maximizing player, and wants alpha to become as high as possible.
- * player B is the score minimizing player and wants beta to become as low as possible.
- *
- * Alpha-beta pruning now allows us to drop search whenever we discover a
- * branch that yields moves we know will never be accepted by the other player
- * (as both players are assumed to play perfectly, and thus would never make a
- * move leading to this situation).
- *
- * That is, whenever in a search we find that the alpha value becomes more than
- * the beta value, we know we are in a branch that will never be reached
- * through normal play, and therefore searching here any further is pointless.
- *
- * alpha being more than beta means in this branch Player A has a series of moves
- * available that will lead to a better score than any of the moves in this branch,
- * since we now know that in this branch Player B will be able to make a move that
- * guarantees any options in this branch to be worse than what Player A can optimally do.
- *
- * As both players know this, we will never reach this branch in standard play,
- * and no more searching is needed here.
- *
- * Of course, all this still rests upon the heuristics used for searching. In
- * theory, if we were to search deeper, maybe an even better move would be
- * uncovered for Player A, however the knowledge gained on alpha and beta are
- * based on already having hit maximum searched depth. Therefore it's fine to
- * assume this is the best we will do with our current heuristics and search
- * can be terminated prematurely. Doing so computations and time can be spared.
+ * This function is merely a wrapper around the implementation with hashing.
+ * By setting the hash table to nil the hashing implementation devolves to standard alpha-beta pruning.
+ * For an in-depth explanation see that function.
  */
 func AlphaBeta(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int) (bestBoard MinimaxableGameboard, bestScore int) {
-	color := 1
-	if !maximizingPlayer {
-		color = -1
-	}
-
-	boards := game.NextBoards(color)
-
-	var maxBoard, minBoard MinimaxableGameboard
-	var maxScore, minScore int
-
-	/* In case the game has finish, return current game state */
-	if len(boards) == 0 {
-		return game, game.Score()
-	}
-
-	/* If we have reached maximum search depth, heuristically evaluate game
-	 * boards.
-	 */
-	if depth == 0 {
-		/* Handle maximizing player */
-		if maximizingPlayer {
-			for i, board := range boards {
-				/* Compute position heurstic */
-				newScore := board.Score()
-
-				/* Store best board seen */
-				if i == 0 {
-					maxScore = newScore
-					maxBoard = board
-				} else {
-					if newScore > maxScore {
-						maxScore = newScore
-						maxBoard = board
-					}
-				}
-			}
-
-			/* Return best board available */
-			return maxBoard, maxScore
-		} else { /* Handle minimizing player */
-			for i, board := range boards {
-				/* Compute position heurstic */
-				newScore := board.Score()
-
-				/* Store best board seen (in our case, lowest score possible) */
-				if i == 0 {
-					minScore = newScore
-					minBoard = board
-				} else {
-					if newScore < minScore {
-						minScore = newScore
-						minBoard = board
-					}
-				}
-			}
-			return minBoard, minScore
-		}
-	}
-
-	/* If we are not at maximum search depth, iterate the various boards and
-	 * score them by recursively evaluating the underlying game trees.
-	 */
-
-	/* Handle maximizing player */
-	if maximizingPlayer {
-		for i, board := range boards {
-			/* Compute enemy score by recursing */
-			_, newScore := AlphaBeta(board, !maximizingPlayer, depth-1, alpha, beta)
-
-			/* Store best board seen */
-			if i == 0 {
-				maxScore = newScore
-				maxBoard = board
-			} else {
-				if newScore > maxScore {
-					maxScore = newScore
-					maxBoard = board
-				}
-			}
-			/* Update alpha if necessary */
-			if maxScore > alpha {
-				alpha = maxScore
-			}
-			/* Terminate if known suboptimal branch found */
-			if alpha >= beta {
-				return maxBoard, maxScore
-			}
-		}
-		return maxBoard, maxScore
-	} else { /* Handle minimizing player */
-		for i, board := range boards {
-			/* Compute enemy score by recursing */
-			_, newScore := AlphaBeta(board, !maximizingPlayer, depth-1, alpha, beta)
-
-			/* Store best board seen (in our case, lowest score possible) */
-			if i == 0 {
-				minScore = newScore
-				minBoard = board
-			} else {
-				if newScore < minScore {
-					minScore = newScore
-					minBoard = board
-				}
-			}
-			/* Update beta if necessary */
-			if minScore < beta {
-				beta = minScore
-			}
-			/* Terminate if known suboptimal branch found */
-			if alpha >= beta {
-				return minBoard, minScore
-			}
-		}
-		return minBoard, minScore
-	}
+	return AlphaBetaTransposition(game, maximizingPlayer, depth, alpha, beta, nil)
 }
 
 /* Minimax with alpha-beta pruning and transposition hashing
@@ -387,39 +227,42 @@ func AlphaBeta(game MinimaxableGameboard, maximizingPlayer bool, depth int, alph
  * positions already seen.
  */
 func AlphaBetaTransposition(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int, transposition TranspositionTable) (bestBoard MinimaxableGameboard, bestScore int) {
-	/* Handle hash table in a compact Golang fashion.
-	 * Using a check at the start, and a defer to cache the function result at the end.
-	 */
-	hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth, alpha, beta)
-	if found {
-		/* Debug hash table behaviour */
-		if true {
-			abBoard, abScore := AlphaBeta(game, maximizingPlayer, depth, alpha, beta)
-			if *(hashBoard.(*AtaxxBoard)) != *(abBoard.(*AtaxxBoard)) || hashScore != abScore {
-				fmt.Println("Input board", game, "maximizingPlayer", maximizingPlayer)
-				fmt.Println("At depth", depth)
-				fmt.Println("alpha", alpha, "beta", beta)
-				fmt.Println("hashBoard", hashBoard, "hashScore", hashScore)
-				fmt.Println("vs.")
-				fmt.Println("abBoard", abBoard, "abScore", abScore)
-				panic("Not equal, terminating.")
+	/* If transposition is nil, this function acts like standard alpha-beta pruning */
+	if transposition != nil {
+		/* Handle hash table in a compact Golang fashion.
+		 * Using a check at the start, and a defer to cache the function result at the end.
+		 */
+		hashBoard, hashScore, found := transposition.Load(game, maximizingPlayer, depth, alpha, beta)
+		if found {
+			/* Debug hash table behaviour */
+			if false {
+				abBoard, abScore := AlphaBeta(game, maximizingPlayer, depth, alpha, beta)
+				if *(hashBoard.(*AtaxxBoard)) != *(abBoard.(*AtaxxBoard)) || hashScore != abScore {
+					fmt.Println("Input board", game, "maximizingPlayer", maximizingPlayer)
+					fmt.Println("At depth", depth)
+					fmt.Println("alpha", alpha, "beta", beta)
+					fmt.Println("hashBoard", hashBoard, "hashScore", hashScore)
+					fmt.Println("vs.")
+					fmt.Println("abBoard", abBoard, "abScore", abScore)
+					panic("Not equal, terminating.")
+				}
 			}
+			return hashBoard, hashScore
 		}
-		return hashBoard, hashScore
-	}
 
-	/* In case the result was not in our hashtable.
+		/* In case the result was not in our hashtable.
 		 * Setup a save statement for when this function returns.
-	     *
-	     * This function takes all function arguments as its parameters to prevent
-	     * changes to these variables later on to mess with the eventual hash entry
-	     * stored. We are essentially caching function calls, and we don't want
-	     * variable changes to affect the function call cached.
-	*/
-	defer func(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int) {
-		//fmt.Println("bestBoard", bestBoard, "bestScore", bestScore)
-		transposition.Store(game, maximizingPlayer, depth, alpha, beta, bestBoard, bestScore)
-	}(game, maximizingPlayer, depth, alpha, beta)
+		 *
+		 * This function takes all function arguments as its parameters to prevent
+		 * changes to these variables later on to mess with the eventual hash entry
+		 * stored. We are essentially caching function calls, and we don't want
+		 * variable changes to affect the function call cached.
+		 */
+		defer func(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int) {
+			//fmt.Println("bestBoard", bestBoard, "bestScore", bestScore)
+			transposition.Store(game, maximizingPlayer, depth, alpha, beta, bestBoard, bestScore)
+		}(game, maximizingPlayer, depth, alpha, beta)
+	}
 
 	color := 1
 	if !maximizingPlayer {
