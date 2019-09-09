@@ -139,8 +139,28 @@ type AtaxxTransposition struct {
 	depth, alpha, beta int
 }
 
+/* A stored transposition result */
 type AtaxxTranspositionResult struct {
 	resultBoard AtaxxBoard
+	resultScore int
+}
+
+/* A transposition table for storing AtaxxBit boards */
+type AtaxxBitTranspositionTable struct {
+	transpositionMap map[AtaxxBitTransposition]AtaxxBitTranspositionResult
+	maxSize          int
+}
+
+/* A single AtaxxBit Transposition */
+type AtaxxBitTransposition struct {
+	board              AtaxxBitboard
+	maximizingPlayer   bool
+	depth, alpha, beta int
+}
+
+/* A stored bit transposition result */
+type AtaxxBitTranspositionResult struct {
+	resultBoard AtaxxBitboard
 	resultScore int
 }
 
@@ -758,4 +778,39 @@ func (board SingleBitboard) Print() {
 	}
 
 	return
+}
+
+/* Load a previously computed bitboard from our cache */
+func (table *AtaxxBitTranspositionTable) Load(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int) (MinimaxableGameboard, int, bool) {
+	key := AtaxxBitTransposition{*(game.(*AtaxxBitboard)), maximizingPlayer, depth, alpha, beta}
+
+	/* Maps return "zero" values, so in our case an empty board and a 0 score */
+	res, found := table.transpositionMap[key]
+	return &res.resultBoard, res.resultScore, found
+}
+
+/* Store a board to the cache
+ *
+ * This function is where the "magic" happens.
+ * For now use an incredibly simple replacement strategy.
+ * Whenever our hash table hits the maximum size, we clear the hash table.
+ */
+func (table *AtaxxBitTranspositionTable) Store(game MinimaxableGameboard, maximizingPlayer bool, depth int, alpha int, beta int, resultBoard MinimaxableGameboard, resultScore int) {
+	key := AtaxxBitTransposition{*(game.(*AtaxxBitboard)), maximizingPlayer, depth, alpha, beta}
+
+	/* Clear hash table if we are about to grow past maximum size */
+	if len(table.transpositionMap) == table.maxSize {
+		table.transpositionMap = make(map[AtaxxBitTransposition]AtaxxBitTranspositionResult)
+	}
+
+	table.transpositionMap[key] = AtaxxBitTranspositionResult{*(resultBoard.(*AtaxxBitboard)), resultScore}
+}
+
+/* Build a new table with the predefined size */
+func NewBitTranspositionTable(size int) *AtaxxBitTranspositionTable {
+	table := AtaxxBitTranspositionTable{}
+	table.transpositionMap = make(map[AtaxxBitTransposition]AtaxxBitTranspositionResult)
+	table.maxSize = size
+
+	return &table
 }

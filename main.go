@@ -35,7 +35,8 @@ func main() {
 	//return
 
 	/* Self play until finished. */
-	transposition := NewTranspositionTable(160000)
+	//transposition := NewTranspositionTable(160000)
+	transposition := NewBitTranspositionTable(160000)
 	for !board.Finished() {
 		var currentPlayer string
 		if color == 1 {
@@ -46,9 +47,9 @@ func main() {
 
 		fmt.Println("Turn", turn, currentPlayer, "moves")
 		//newBoard, _ := Minimax(board, color, 3)
-		newBoard, _ := AlphaBeta(board, color == 1, 3, -49, 49)
+		//newBoard, _ := AlphaBeta(board, color == 1, 5, -49, 49)
 		//newBoard, _ := AlphaBetaTransposition(board, color == 1, 4, -49, 49, NewTranspositionTable(60000))
-		//newBoard, _ := AlphaBetaTransposition(board, color == 1, 4, -49, 49, transposition)
+		newBoard, _ := AlphaBetaTransposition(board, color == 1, 5, -49, 49, transposition)
 
 		//board = newBoard.(*AtaxxBoard)
 		board = newBoard.(*AtaxxBitboard)
