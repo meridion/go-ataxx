@@ -202,7 +202,7 @@ func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboar
 			/* Found an empty cell */
 			if board[y][x] == 0 {
 				hasEmptyCell = true
-				hasSubdivided := false
+				hasSubdivision := false
 
 				/* This is another optimization
 				 * Every move to a certain position
@@ -251,8 +251,6 @@ func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboar
 
 						/* Found a piece that can move to the center */
 						if board[iy+y][ix+x] == color {
-							isSubdivision := true
-
 							/* Setup move cache if it was not initialized
 							 * see explanation near declaration for details.
 							 */
@@ -284,9 +282,10 @@ func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboar
 								 * the template.
 								 */
 								newBoardTemplate[y][x] = color
-							}
+							} /* Setup template */
 
 							/* Establish wether we are jumping or subdividing */
+							isSubdivision := true
 							if ix < -1 || ix > 1 {
 								isSubdivision = false
 							}
@@ -303,16 +302,12 @@ func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboar
 								 * same end board state.  Since we want to
 								 * prevent duplicate boards, only return the
 								 * first possible subdivision detected.
+								 *
+								 * To make move order returned equal to the move
+								 * order of the bitboards, return subdivision last.
+								 * (also making minimax favor jumps in the process)
 								 */
-								if hasSubdivided {
-									continue
-								}
-
-								/* Since subdivision is equal to the board template
-								 * state we have cached simply add the template
-								 * to the set.
-								 */
-								results = append(results, newBoardTemplate)
+								hasSubdivision = true
 
 							} else { /* Handle jumping */
 								/* Every jump is unique, as the piece
@@ -336,7 +331,15 @@ func (board *AtaxxBoard) NextBoards(maximizingPlayer bool) []MinimaxableGameboar
 								results = append(results, newBoard)
 							}
 						}
-					}
+					} /* inner-X loop */
+				} /* inner-Y loop */
+
+				if hasSubdivision {
+					/* Since subdivision is equal to the board template
+					 * state we have cached simply add the template
+					 * to the set.
+					 */
+					results = append(results, newBoardTemplate)
 				}
 			} /* if empty */
 		} /* for x */
@@ -557,13 +560,7 @@ func (board *AtaxxBitboard) NextBoards(maximizingPlayer bool) []MinimaxableGameb
 			newMoveTemplate.movingPlayer |= infectionMask
 			newMoveTemplate.waitingPlayer &= ^infectionMask
 
-			/* Now check if this player can subdivide */
-			if move.movingPlayer&subdivideMask[bit] != 0 {
-				/* Add subdivided board to results */
-				results = append(results, newMoveTemplate.ToMinimaxBoard(maximizingPlayer))
-			}
-
-			/* Finally handle jumps, if any
+			/* Handle jumps, if any
 			 *
 			 * Jumps are handled by using a bit hack to fetch the LSB (least
 			 * significant bit) from the jumpingMask and clearing this
@@ -587,6 +584,19 @@ func (board *AtaxxBitboard) NextBoards(maximizingPlayer bool) []MinimaxableGameb
 				/* Finally clear jumped piece from jumping mask */
 				jumpingMask ^= nextJump
 			}
+
+			/* Now check if this player can subdivide
+			 *
+			 * We also intentionally return subdivision last,
+			 * to make move order identical to non-bitboard computation.
+			 * This also does make minimax favor jumps, which we might want
+			 * to change later on.
+			 */
+			if move.movingPlayer&subdivideMask[bit] != 0 {
+				/* Add subdivided board to results */
+				results = append(results, newMoveTemplate.ToMinimaxBoard(maximizingPlayer))
+			}
+
 		}
 	}
 
