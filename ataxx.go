@@ -104,7 +104,6 @@ type AtaxxTransposition struct {
 }
 
 type AtaxxTranspositionResult struct {
-	key         AtaxxTransposition
 	resultBoard AtaxxBoard
 	resultScore int
 }
@@ -386,11 +385,6 @@ func (table *AtaxxTranspositionTable) Load(game MinimaxableGameboard, maximizing
 
 	/* Maps return "zero" values, so in our case an empty board and a 0 score */
 	res, found := table.transpositionMap[key]
-	if found && res.key != key {
-		fmt.Println("result key:", res.key)
-		fmt.Println("input key:", key)
-		panic("Hash table result key does not match input key")
-	}
 	return &res.resultBoard, res.resultScore, found
 }
 
@@ -408,7 +402,7 @@ func (table *AtaxxTranspositionTable) Store(game MinimaxableGameboard, maximizin
 		table.transpositionMap = make(map[AtaxxTransposition]AtaxxTranspositionResult)
 	}
 
-	table.transpositionMap[key] = AtaxxTranspositionResult{key, *(resultBoard.(*AtaxxBoard)), resultScore}
+	table.transpositionMap[key] = AtaxxTranspositionResult{*(resultBoard.(*AtaxxBoard)), resultScore}
 }
 
 /* Build a new table with the predefined size */
