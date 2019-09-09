@@ -164,6 +164,19 @@ func (board *AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 				hasEmptyCell = true
 				hasSubdivided := false
 
+				/* This is another optimization
+				 * Every move to a certain position
+				 * has a few effects that are always the same:
+				 * - The enemy pieces are infected, that is,
+				 *   no directly neighbouring pieces are of enemy color.
+				 * - The center piece is taken by the player also.
+				 * These are the same, wether we jump or subdivide.
+				 * This being the case, we can cache this state and use it as a
+				 * template for setting up the final board positions for moves
+				 * to the center of this neighbourhood.
+				 */
+				var newBoardTemplate *AtaxxBoard = nil
+
 				/* Now iterate the neighbourhood around this cell
 				 * with X and/or Y having a disposition of 1 meaning
 				 * subdivide distance.
@@ -200,6 +213,39 @@ func (board *AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 						if board[iy+y][ix+x] == color {
 							isSubdivision := true
 
+							/* Setup move cache if it was not initialized
+							 * see explanation near declaration for details.
+							 */
+							if newBoardTemplate == nil {
+								newBoardTemplate = &AtaxxBoard{}
+								*newBoardTemplate = *board
+
+								/* Infect enemy pieces
+								 *
+								 * As with the movable piece search
+								 * neighbourhood also clamp this neighbourhood
+								 * to remain within the board.
+								 */
+								for iiy := -1; iiy <= 1; iiy++ {
+									if y+iiy < 0 || y+iiy >= 7 {
+										continue
+									}
+									for iix := -1; iix <= 1; iix++ {
+										if x+iix < 0 || x+iix >= 7 {
+											continue
+										}
+										if newBoardTemplate[y+iiy][x+iix] == -color {
+											newBoardTemplate[y+iiy][x+iix] = color
+										}
+									}
+								}
+
+								/* Add piece to neighbourhood center completing
+								 * the template.
+								 */
+								newBoardTemplate[y][x] = color
+							}
+
 							/* Establish wether we are jumping or subdividing */
 							if ix < -1 || ix > 1 {
 								isSubdivision = false
@@ -222,70 +268,31 @@ func (board *AtaxxBoard) NextBoards(color int) []MinimaxableGameboard {
 									continue
 								}
 
-								/* Add piece to neighbourhood center and add to
-								 * resulting set.
+								/* Since subdivision is equal to the board template
+								 * state we have cached simply add the template
+								 * to the set.
 								 */
-								/* Copy board data */
-								newBoard := &AtaxxBoard{}
-								*newBoard = *board
+								results = append(results, newBoardTemplate)
 
-								/* Infect enemy pieces
-								 *
-								 * As with the movable piece search
-								 * neighbourhood also clamp this neighbourhood
-								 * to remain within the board.
-								 */
-								for iiy := -1; iiy <= 1; iiy++ {
-									if y+iiy < 0 || y+iiy >= 7 {
-										continue
-									}
-									for iix := -1; iix <= 1; iix++ {
-										if x+iix < 0 || x+iix >= 7 {
-											continue
-										}
-										if newBoard[y+iiy][x+iix] == -color {
-											newBoard[y+iiy][x+iix] = color
-										}
-									}
-								}
-
-								newBoard[y][x] = color
-								results = append(results, newBoard)
-
-								/* Handle jumping */
-							} else {
+							} else { /* Handle jumping */
 								/* Every jump is unique, as the piece
-								 * performing the jump leaves its original
-								 * position.
-								 * Therefore we add every jump as a new board
-								 * configuration.
-								 */
-								/* Copy board data */
+																 * performing the jump leaves its original
+																 * position.
+																 * Therefore we add every jump as a new board
+																 * configuration.
+								                                 *
+								                                 * However since we have our board template set
+								                                 * up we only need to copy the template and
+								                                 * remove the piece that jumped from it.
+								*/
+								/* Copy template data */
 								newBoard := &AtaxxBoard{}
-								*newBoard = *board
-								/* Add center piece */
-								newBoard[y][x] = color
-								/* Removing piece that jumped */
+								*newBoard = *newBoardTemplate
+
+								/* Remove piece that jumped */
 								newBoard[iy+y][ix+x] = 0
-								/* Infect enemy pieces
-								 *
-								 * As with the movable piece search
-								 * neighbourhood also clamp this neighbourhood
-								 * to remain within the board.
-								 */
-								for iiy := -1; iiy <= 1; iiy++ {
-									if y+iiy < 0 || y+iiy >= 7 {
-										continue
-									}
-									for iix := -1; iix <= 1; iix++ {
-										if x+iix < 0 || x+iix >= 7 {
-											continue
-										}
-										if newBoard[y+iiy][x+iix] == -color {
-											newBoard[y+iiy][x+iix] = color
-										}
-									}
-								}
+
+								/* Add to total moves available */
 								results = append(results, newBoard)
 							}
 						}
