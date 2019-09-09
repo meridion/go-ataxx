@@ -710,9 +710,9 @@ func (board *AtaxxBitboard) Print() {
 	for y := 0; y < 7; y++ {
 		for x := 0; x < 7; x++ {
 			maskBit := SingleBitboard(1 << uint((y)*7+x))
-			if board.maximizingPlayer|maskBit != 0 {
+			if board.maximizingPlayer&maskBit != 0 {
 				fmt.Print(" X")
-			} else if board.minimizingPlayer|maskBit != 0 {
+			} else if board.minimizingPlayer&maskBit != 0 {
 				fmt.Print(" O")
 			} else {
 				fmt.Print(" .")
