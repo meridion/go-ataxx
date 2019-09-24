@@ -1,18 +1,43 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html"
+	"io"
 	"log"
 	"net/http"
 )
 
 func main() {
-	if false {
+	if true {
 		http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 		})
 
+		http.HandleFunc("/ply", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				fmt.Println("Received method", r.Method)
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			var lr io.LimitedReader
+			/* Allow a post-body of maximum size 1kB
+			 * This should be more than enough for the JSON POST requests we handle.
+			 */
+			lr.R = r.Body
+			lr.N = 1024
+			decoder := json.NewDecoder(&lr)
+
+			/* Decode board state + player on turn */
+			var ply AtaxxPly
+			err := decoder.Decode(&ply)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+			fmt.Println("Received board", ply)
+		})
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}
 
@@ -49,7 +74,8 @@ func main() {
 		//newBoard, _ := Minimax(board, color, 3)
 		//newBoard, _ := AlphaBeta(board, color == 1, 5, -49, 49)
 		//newBoard, _ := AlphaBetaTransposition(board, color == 1, 4, -49, 49, NewTranspositionTable(60000))
-		newBoard, _ := AlphaBetaTransposition(board, color == 1, 5, -49, 49, transposition)
+		//newBoard, _ := AlphaBetaTransposition(board, color == 1, 5, -49, 49, transposition)
+		newBoard, _ := AlphaBetaTransposition(board, color == 1, 3, -49, 49, transposition)
 
 		//board = newBoard.(*AtaxxBoard)
 		board = newBoard.(*AtaxxBitboard)
