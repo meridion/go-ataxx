@@ -11,6 +11,8 @@ import (
 
 func main() {
 	if true {
+		http.Handle("/", http.FileServer(http.Dir(".")))
+
 		http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 		})
