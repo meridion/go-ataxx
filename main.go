@@ -37,8 +37,22 @@ func main() {
 			if err != nil {
 				panic(err)
 			}
-			fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-			fmt.Println("Received board", ply)
+
+			/* Compute next computer move */
+			newBoard, _ := AlphaBeta(&ply.Board, ply.MaximizingPlayer, 5, -49, 49)
+
+			/* Return resulting game state */
+			var rply AtaxxPly
+			rply.Board = *(newBoard.(*AtaxxBoard))
+			rply.MaximizingPlayer = !ply.MaximizingPlayer
+
+			/* Marshal to JSON */
+			w.Header().Set("Content-Type", "application/json")
+			encoder := json.NewEncoder(w)
+			err = encoder.Encode(&rply)
+			if err != nil {
+				panic(err)
+			}
 		})
 
 		/* Return a new Game board in JSON AtaxxPly format over GET request */
