@@ -9,12 +9,25 @@
 for (i=0; i < 10; i++) {
     document.write(i);
 }
+function selfplay(state) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("demo").innerHTML =
+            this.responseText;
+            selfplay(JSON.parse(this.responseText));
+       }
+    };
+    xhttp.open("POST", "/ply", true);
+    xhttp.send(JSON.stringify(state));
+}
 function newgame() {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             document.getElementById("demo").innerHTML =
             this.responseText;
+            selfplay(JSON.parse(this.responseText));
        }
     };
     xhttp.open("GET", "/new", true);
