@@ -40,6 +40,31 @@ func main() {
 			fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 			fmt.Println("Received board", ply)
 		})
+
+		/* Return a new Game board in JSON AtaxxPly format over GET request */
+		http.HandleFunc("/new", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodGet {
+				fmt.Println("Received method", r.Method)
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			encoder := json.NewEncoder(w)
+			var newGame AtaxxPly
+			newGame = AtaxxPly{*NewGame(), true}
+			//board := NewGame()
+			//fmt.Println(newGame)
+			jsonPly, err := json.Marshal(newGame)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(jsonPly)
+			err = encoder.Encode(&newGame)
+			if err != nil {
+				panic(err)
+			}
+		})
+
 		log.Fatal(http.ListenAndServe(":8080", nil))
 	}
 

@@ -134,8 +134,8 @@ type AtaxxTranspositionTable struct {
 
 /* A single Ataxx ply (board + player on turn), used by HTTP server */
 type AtaxxPly struct {
-	board            AtaxxBoard
-	maximizingPlayer bool
+	Board            AtaxxBoard `json:"board"`
+	MaximizingPlayer bool       `json:"maximizing_player"`
 }
 
 /* A single Ataxx Transposition */
