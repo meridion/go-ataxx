@@ -1,8 +1,133 @@
 <html>
 <head>
     <title>Go Ataxx!</title>
+<style>
+.board {
+    display: grid;
+    grid-template-columns: 100px 100px 100px 100px 100px 100px 100px;
+}
+.cell {
+    border-width: 1px;
+    border-style: solid;
+    background-color: #999;
+    width: 100px;
+    height: 100px;
+}
+.green {
+    background-color: #5f5;
+}
+.blue {
+    background-color: #55f;
+}
+.piece {
+    position: relative;
+    border-radius: 50%;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+}
+</style>
 </head>
 <body>
-    It's a game for the whole family!
+    <div class="board">
+        <div id="c0" class="cell"></div>
+        <div id="c1" class="cell"></div>
+        <div id="c2" class="cell"></div>
+        <div id="c3" class="cell"></div>
+        <div id="c4" class="cell"></div>
+        <div id="c5" class="cell"></div>
+        <div id="c6" class="cell"></div>
+        <div id="c7" class="cell"></div>
+        <div id="c8" class="cell"></div>
+        <div id="c9" class="cell"></div>
+        <div id="c10" class="cell"></div>
+        <div id="c11" class="cell"></div>
+        <div id="c12" class="cell"></div>
+        <div id="c13" class="cell"></div>
+        <div id="c14" class="cell"></div>
+        <div id="c15" class="cell"></div>
+        <div id="c16" class="cell"></div>
+        <div id="c17" class="cell"></div>
+        <div id="c18" class="cell"></div>
+        <div id="c19" class="cell"></div>
+        <div id="c20" class="cell"></div>
+        <div id="c21" class="cell"></div>
+        <div id="c22" class="cell"></div>
+        <div id="c23" class="cell"></div>
+        <div id="c24" class="cell"></div>
+        <div id="c25" class="cell"></div>
+        <div id="c26" class="cell"></div>
+        <div id="c27" class="cell"></div>
+        <div id="c28" class="cell"></div>
+        <div id="c29" class="cell"></div>
+        <div id="c30" class="cell"></div>
+        <div id="c31" class="cell"></div>
+        <div id="c32" class="cell"></div>
+        <div id="c33" class="cell"></div>
+        <div id="c34" class="cell"></div>
+        <div id="c35" class="cell"></div>
+        <div id="c36" class="cell"></div>
+        <div id="c37" class="cell"></div>
+        <div id="c38" class="cell"></div>
+        <div id="c39" class="cell"></div>
+        <div id="c40" class="cell"></div>
+        <div id="c41" class="cell"></div>
+        <div id="c42" class="cell"></div>
+        <div id="c43" class="cell"></div>
+        <div id="c44" class="cell"></div>
+        <div id="c45" class="cell"></div>
+        <div id="c46" class="cell"></div>
+        <div id="c47" class="cell"></div>
+        <div id="c48" class="cell"></div>
+    </div>
+<script>
+function updateBoard(board) {
+    cid = 0;
+    for (y = 0; y < 7; y++) {
+        for (x = 0; x < 7; x++) {
+            let piece = "";
+            switch (board[y][x]) {
+                case 1:
+                    piece = '<div class="blue piece"></div>'
+                    break;
+
+                case -1:
+                    piece = '<div class="green piece"></div>'
+                    break;
+
+                default:;
+            }
+            document.getElementById("c" + cid).innerHTML = piece;
+            cid++;
+        }
+    }
+}
+function selfplay(state) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            state = JSON.parse(this.responseText);
+            updateBoard(state.board);
+            selfplay(state);
+       }
+    };
+    xhttp.open("POST", "/ply", true);
+    xhttp.send(JSON.stringify(state));
+}
+function newgame() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            state = JSON.parse(this.responseText);
+            updateBoard(state.board);
+            selfplay(state);
+       }
+    };
+    xhttp.open("GET", "/new", true);
+    xhttp.send();
+}
+newgame();
+</script>
 </body>
 </html>
