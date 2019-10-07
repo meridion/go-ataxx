@@ -138,6 +138,17 @@ type AtaxxPly struct {
 	MaximizingPlayer bool       `json:"maximizing_player"`
 }
 
+/* Human player move information */
+type AtaxxPlayerMove struct {
+	State AtaxxPly `json:"state"`
+
+	/* Source cell index (7*y + x) */
+	Source int `json:"source"`
+
+	/* Target cell index */
+	Target int `json:"target"`
+}
+
 /* A single Ataxx Transposition */
 type AtaxxTransposition struct {
 	AtaxxPly
@@ -441,6 +452,85 @@ func (board *AtaxxBoard) Print() {
 	}
 
 	return
+}
+
+/* Perform a human player move */
+func HumanMove(game *AtaxxBoard, maximizingPlayer bool, srcX, srcY, tgtX, tgtY int) (bestBoard AtaxxBoard, valid bool) {
+	/* First some sanity checks on the user input */
+	if srcX < 0 || srcX > 6 || tgtX < 0 || tgtX > 6 ||
+		srcY < 0 || srcY > 6 || tgtY < 0 || tgtY > 6 {
+		return *game, false
+	}
+
+	dist := func(a, b int) int {
+		if a < b {
+			return b - a
+		} else {
+			return a - b
+		}
+	}
+
+	/* Compute movement distances */
+	dstX := dist(srcX, tgtX)
+	dstY := dist(srcY, tgtY)
+
+	/* Secondly make sure cells are actually close enough */
+	if dstX > 2 || dstY > 2 {
+		return *game, false
+	}
+
+	/* Is our stone jumping? (movement of more than one cell) */
+	jump := dstX == 2 || dstY == 2
+
+	/* Target cell should not contain piece */
+	if game[tgtY][tgtX] != 0 {
+		return *game, false
+	}
+
+	/* Determine moving player's piece color */
+	var color int8
+	if maximizingPlayer {
+		color = 1
+	} else {
+		color = -1
+	}
+
+	/* Source cell should contain our color */
+	if game[srcY][srcX] != color {
+		return *game, false
+	}
+
+	/* Move is valid, copy board state and compute output */
+	newBoard := *game
+
+	/* Set target to our color */
+	newBoard[tgtY][tgtX] = color
+
+	/* If jumped, remove source piece */
+	if jump {
+		newBoard[srcY][srcX] = 0
+	}
+
+	/* Infect neighbourhood cells */
+	infect := func(x int, y int) {
+		for iiy := -1; iiy <= 1; iiy++ {
+			if y+iiy < 0 || y+iiy >= 7 {
+				continue
+			}
+			for iix := -1; iix <= 1; iix++ {
+				if x+iix < 0 || x+iix >= 7 {
+					continue
+				}
+				if newBoard[y+iiy][x+iix] == -color {
+					newBoard[y+iiy][x+iix] = color
+				}
+			}
+		}
+	}
+	infect(tgtX, tgtY)
+
+	/* Finally return resulting board state */
+	return newBoard, true
 }
 
 /* Load a previously computed board from our cache */

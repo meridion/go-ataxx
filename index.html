@@ -96,6 +96,9 @@ let selectedCell = -1
 /* Currently waiting for computer move? */
 let waitMove = false
 
+/* Current game state */
+let globalState = null
+
 function updateBoard(board) {
     cid = 0;
     for (y = 0; y < 7; y++) {
@@ -121,7 +124,7 @@ function selfplay(state) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            state = JSON.parse(this.responseText);
+            let state = JSON.parse(this.responseText);
             updateBoard(state.board);
             selfplay(state);
        }
@@ -129,11 +132,32 @@ function selfplay(state) {
     xhttp.open("POST", "/ply", true);
     xhttp.send(JSON.stringify(state));
 }
+/* FIXME: This function breaks on time-out
+ * but we're prototyping anyway.
+ * We will eventually get to proper error handling.
+ */
+function scheduleComputerMove(state) {
+    waitMove = true;
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            let state = JSON.parse(this.responseText);
+            updateBoard(state.board);
+            globalState = state
+            waitMove = false;
+       }
+    };
+    xhttp.open("POST", "/ply", true);
+    xhttp.send(JSON.stringify(state));
+}
+
+/* Fetch new-game board state */
 function newgame() {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
-            state = JSON.parse(this.responseText);
+            let state = JSON.parse(this.responseText);
+            globalState = state
             updateBoard(state.board);
             //selfplay(state);
        }
@@ -163,11 +187,40 @@ function makeClickHandler(x, y, cid, elem) {
                 } else {
                     let elem = document.getElementById("c" + selectedCell);
                     elem.classList.remove('selected');
+                    makeMove(selectedCell, cid);
                     selectedCell = -1;
                 }
             }
         }
     }
+}
+
+/* Make a player move based on 2 cell indexes */
+function makeMove(sourceCell, targetCell) {
+    move = {
+        'state': globalState,
+        'source': sourceCell,
+        'target': targetCell
+    }
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            let state = JSON.parse(this.responseText);
+            updateBoard(state.board);
+            globalState = state
+
+            /* If we made a successful move, it is no longer our turn.
+             * so schedule a computer move
+             */
+            if (!state.player) {
+                scheduleComputerMove(state);
+            }
+       }
+    };
+
+    xhttp.open("POST", "/move", true);
+    xhttp.send(JSON.stringify(move));
 }
 
 /* Install on-click handlers on board cells */
@@ -181,6 +234,7 @@ function setupHandlers() {
         }
     }
 }
+
 setupHandlers();
 newgame();
 </script>

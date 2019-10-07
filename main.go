@@ -55,6 +55,57 @@ func main() {
 			}
 		})
 
+		/* Handle a player-made move */
+		http.HandleFunc("/move", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				fmt.Println("Received method", r.Method)
+				w.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			}
+			var lr io.LimitedReader
+			/* Allow a post-body of maximum size 1kB
+			 * This should be more than enough for the JSON POST requests we handle.
+			 */
+			lr.R = r.Body
+			lr.N = 1024
+			decoder := json.NewDecoder(&lr)
+
+			/* Decode board state + player on turn */
+			var move AtaxxPlayerMove
+			err := decoder.Decode(&move)
+			if err != nil {
+				panic(err)
+			}
+
+			/* Compute coordinates */
+			srcX := move.Source % 7
+			srcY := move.Source / 7
+			tgtX := move.Target % 7
+			tgtY := move.Target / 7
+
+			/* Perform human move */
+			newBoard, valid := HumanMove(&move.State.Board, move.State.MaximizingPlayer, srcX, srcY, tgtX, tgtY)
+
+			/* Return resulting game state */
+			var rply AtaxxPly
+			rply.Board = newBoard
+			/* No longer our turn */
+			if valid {
+				rply.MaximizingPlayer = !move.State.MaximizingPlayer
+				/* Still our turn */
+			} else {
+				rply.MaximizingPlayer = move.State.MaximizingPlayer
+			}
+
+			/* Marshal to JSON */
+			w.Header().Set("Content-Type", "application/json")
+			encoder := json.NewEncoder(w)
+			err = encoder.Encode(&rply)
+			if err != nil {
+				panic(err)
+			}
+		})
+
 		/* Return a new Game board in JSON AtaxxPly format over GET request */
 		http.HandleFunc("/new", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodGet {
