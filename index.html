@@ -7,11 +7,15 @@
     grid-template-columns: 100px 100px 100px 100px 100px 100px 100px;
 }
 .cell {
+    box-sizing: border-box;
     border-width: 1px;
     border-style: solid;
     background-color: #999;
     width: 100px;
     height: 100px;
+}
+.cell:hover {
+    background-color: #aaa;
 }
 .green {
     background-color: #5f5;
@@ -26,6 +30,10 @@
     left: 10%;
     width: 80%;
     height: 80%;
+}
+.selected {
+    border-width: 4px;
+    border-color: #aaf;
 }
 </style>
 </head>
@@ -82,6 +90,12 @@
         <div id="c48" class="cell"></div>
     </div>
 <script>
+/* Cell player has selected for move */
+let selectedCell = -1
+
+/* Currently waiting for computer move? */
+let waitMove = false
+
 function updateBoard(board) {
     cid = 0;
     for (y = 0; y < 7; y++) {
@@ -121,12 +135,53 @@ function newgame() {
         if (this.readyState == 4 && this.status == 200) {
             state = JSON.parse(this.responseText);
             updateBoard(state.board);
-            selfplay(state);
+            //selfplay(state);
        }
     };
     xhttp.open("GET", "/new", true);
     xhttp.send();
 }
+
+/* Use a closure to store specific click info */
+function makeClickHandler(x, y, cid, elem) {
+    return () => {
+        console.log(x, y, cid, elem);
+        if (!waitMove) {
+            /* Select a cell */
+            if (selectedCell == -1) {
+                selectedCell = cid;
+                elem.classList.add('selected');
+
+            /* Make a move */
+            } else {
+                /* Unselect cell */
+                if (selectedCell == cid) {
+                    selectedCell = -1;
+                    elem.classList.remove('selected');
+
+                /* Make move */
+                } else {
+                    let elem = document.getElementById("c" + selectedCell);
+                    elem.classList.remove('selected');
+                    selectedCell = -1;
+                }
+            }
+        }
+    }
+}
+
+/* Install on-click handlers on board cells */
+function setupHandlers() {
+    let cid = 0;
+    for (y = 0; y < 7; y++) {
+        for (x = 0; x < 7; x++) {
+            let elem = document.getElementById("c" + cid);
+            elem.onclick = makeClickHandler(x, y, cid, elem);
+            cid++;
+        }
+    }
+}
+setupHandlers();
 newgame();
 </script>
 </body>
