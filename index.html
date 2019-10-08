@@ -213,7 +213,7 @@ function makeMove(sourceCell, targetCell) {
             /* If we made a successful move, it is no longer our turn.
              * so schedule a computer move
              */
-            if (!state.player) {
+            if (!state.maximizing_player) {
                 scheduleComputerMove(state);
             }
        }
