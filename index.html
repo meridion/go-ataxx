@@ -2,20 +2,122 @@
 <head>
     <title>Go Ataxx!</title>
 <style>
-.board {
+body {
+    /*background-color: #555;*/
+    margin: 0px;
+    --header-height: 50px;
+}
+.game {
     display: grid;
-    grid-template-columns: 100px 100px 100px 100px 100px 100px 100px;
+    grid-template-columns: auto minmax(calc(100vmin - var(--header-height)), calc(100vh - var(--header-height))) auto;
+    grid-template-rows: var(--header-height) auto;
+    height: 100vh;
+    width: 100vw;
+}
+.game-header {
+    /*background-color: #55ff55;*/
+    background-color: #fff;
+    grid-column: 1/4;
+    grid-row: 1/2;
+    box-shadow: 10px 0px 5px grey;
+}
+.game-score {
+    /*background-color: #ff5;*/
+    grid-column: 2/3;
+    grid-row: 1/2;
+    display: flex;
+    flex-direction: column;
+    align-content: space-between;
+    flex-wrap: wrap;
+}
+.score {
+    position: relative;
+    border-style: solid;
+    border-width: 0px 1px 0px 1px;
+    /*border-color: #000;*/
+    width: calc(2.5 * var(--header-height));
+    height: var(--header-height);
+    display: flex;
+    align-items: center;
+    justify-content: stretch;
+}
+.blue-player {
+    flex-direction: row;
+}
+.green-player {
+    flex-direction: row-reverse;
+}
+.green-player:after {
+    content:'';
+    position:absolute;
+    bottom: 0;
+    right: 0;
+    width: 0px;
+    height: 2px;
+    transition: width 0.2s;
+    background-color: #00ff00;
+}
+.blue-player:after {
+    content:'';
+    position:absolute;
+    bottom: 0;
+    left: 0;
+    width: 0px;
+    height: 2px;
+    transition: width 0.2s;
+    background-color: #0000ff;
+}
+.on-turn:after {
+    width: 100%;
+}
+.game-board-container {
+    /*background-color: #5ff;*/
+    grid-column: 2/3;
+    grid-row: 2/3;
+    /* Center item */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.player-indicator {
+    width: calc(0.5 * var(--header-height));
+    height: calc(0.5 * var(--header-height));
+    border-radius: 50%;
+    margin: 10px;
+}
+.green-player > .player-indicator {
+    background-color: #7c7;
+}
+.blue-player > .player-indicator {
+    background-color: #77c;
+}
+.aspect-square {
+    position: relative;
+    margin: 20px;
+    flex-grow: 1;
+}
+.aspect-board {
+    /*background-color: #fff;*/
+    padding-bottom: 100%;
+}
+.board {
+    position: absolute;
+    display: grid;
+    grid-template-columns: auto auto auto auto auto auto auto;
+    border-width: 1px;
+    border-style: solid;
+    width: 100%;
+    height: 100%;
+    box-shadow: 5px 5px 10px grey;
 }
 .cell {
     box-sizing: border-box;
     border-width: 1px;
     border-style: solid;
-    background-color: #999;
-    width: 100px;
-    height: 100px;
+    background-color: #ba9;
 }
 .cell:hover {
-    background-color: #aaa;
+    background-color: #cba;
 }
 .green {
     background-color: #5f5;
@@ -32,62 +134,82 @@
     height: 80%;
 }
 .selected {
-    border-width: 4px;
     border-color: #aaf;
 }
 </style>
 </head>
 <body>
-    <div class="board">
-        <div id="c0" class="cell"></div>
-        <div id="c1" class="cell"></div>
-        <div id="c2" class="cell"></div>
-        <div id="c3" class="cell"></div>
-        <div id="c4" class="cell"></div>
-        <div id="c5" class="cell"></div>
-        <div id="c6" class="cell"></div>
-        <div id="c7" class="cell"></div>
-        <div id="c8" class="cell"></div>
-        <div id="c9" class="cell"></div>
-        <div id="c10" class="cell"></div>
-        <div id="c11" class="cell"></div>
-        <div id="c12" class="cell"></div>
-        <div id="c13" class="cell"></div>
-        <div id="c14" class="cell"></div>
-        <div id="c15" class="cell"></div>
-        <div id="c16" class="cell"></div>
-        <div id="c17" class="cell"></div>
-        <div id="c18" class="cell"></div>
-        <div id="c19" class="cell"></div>
-        <div id="c20" class="cell"></div>
-        <div id="c21" class="cell"></div>
-        <div id="c22" class="cell"></div>
-        <div id="c23" class="cell"></div>
-        <div id="c24" class="cell"></div>
-        <div id="c25" class="cell"></div>
-        <div id="c26" class="cell"></div>
-        <div id="c27" class="cell"></div>
-        <div id="c28" class="cell"></div>
-        <div id="c29" class="cell"></div>
-        <div id="c30" class="cell"></div>
-        <div id="c31" class="cell"></div>
-        <div id="c32" class="cell"></div>
-        <div id="c33" class="cell"></div>
-        <div id="c34" class="cell"></div>
-        <div id="c35" class="cell"></div>
-        <div id="c36" class="cell"></div>
-        <div id="c37" class="cell"></div>
-        <div id="c38" class="cell"></div>
-        <div id="c39" class="cell"></div>
-        <div id="c40" class="cell"></div>
-        <div id="c41" class="cell"></div>
-        <div id="c42" class="cell"></div>
-        <div id="c43" class="cell"></div>
-        <div id="c44" class="cell"></div>
-        <div id="c45" class="cell"></div>
-        <div id="c46" class="cell"></div>
-        <div id="c47" class="cell"></div>
-        <div id="c48" class="cell"></div>
+    <div class="game">
+        <div class="game-header"></div>
+        <div class="game-score">
+            <div id="green-score-container" class="score green-player">
+                <div class="player-indicator"></div>
+                <h2 id="green-score">0</h2>
+            </div>
+            <div id="blue-score-container" class="score blue-player">
+                <div class="player-indicator"></div>
+                <h2 id="blue-score">0</h2>
+            </div>
+        </div>
+        <div class="game-board-container">
+            <div class="aspect-square">
+                <div class="aspect-board">
+                <div class="board">
+                    <div id="c0" class="cell"></div>
+                    <div id="c1" class="cell"></div>
+                    <div id="c2" class="cell"></div>
+                    <div id="c3" class="cell"></div>
+                    <div id="c4" class="cell"></div>
+                    <div id="c5" class="cell"></div>
+                    <div id="c6" class="cell"></div>
+                    <div id="c7" class="cell"></div>
+                    <div id="c8" class="cell"></div>
+                    <div id="c9" class="cell"></div>
+                    <div id="c10" class="cell"></div>
+                    <div id="c11" class="cell"></div>
+                    <div id="c12" class="cell"></div>
+                    <div id="c13" class="cell"></div>
+                    <div id="c14" class="cell"></div>
+                    <div id="c15" class="cell"></div>
+                    <div id="c16" class="cell"></div>
+                    <div id="c17" class="cell"></div>
+                    <div id="c18" class="cell"></div>
+                    <div id="c19" class="cell"></div>
+                    <div id="c20" class="cell"></div>
+                    <div id="c21" class="cell"></div>
+                    <div id="c22" class="cell"></div>
+                    <div id="c23" class="cell"></div>
+                    <div id="c24" class="cell"></div>
+                    <div id="c25" class="cell"></div>
+                    <div id="c26" class="cell"></div>
+                    <div id="c27" class="cell"></div>
+                    <div id="c28" class="cell"></div>
+                    <div id="c29" class="cell"></div>
+                    <div id="c30" class="cell"></div>
+                    <div id="c31" class="cell"></div>
+                    <div id="c32" class="cell"></div>
+                    <div id="c33" class="cell"></div>
+                    <div id="c34" class="cell"></div>
+                    <div id="c35" class="cell"></div>
+                    <div id="c36" class="cell"></div>
+                    <div id="c37" class="cell"></div>
+                    <div id="c38" class="cell"></div>
+                    <div id="c39" class="cell"></div>
+                    <div id="c40" class="cell"></div>
+                    <div id="c41" class="cell"></div>
+                    <div id="c42" class="cell"></div>
+                    <div id="c43" class="cell"></div>
+                    <div id="c44" class="cell"></div>
+                    <div id="c45" class="cell"></div>
+                    <div id="c46" class="cell"></div>
+                    <div id="c47" class="cell"></div>
+                    <div id="c48" class="cell"></div>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
     </div>
 <script>
 /* Cell player has selected for move */
@@ -99,18 +221,27 @@ let waitMove = false
 /* Current game state */
 let globalState = null
 
-function updateBoard(board) {
-    cid = 0;
-    for (y = 0; y < 7; y++) {
-        for (x = 0; x < 7; x++) {
+function updateBoard() {
+    let board = globalState.board
+
+    /* Score keeping */
+    let greenCount = 0;
+    let blueCount = 0;
+
+    /* Update board visualisation */
+    let cid = 0;
+    for (let y = 0; y < 7; y++) {
+        for (let x = 0; x < 7; x++) {
             let piece = "";
             switch (board[y][x]) {
                 case 1:
                     piece = '<div class="blue piece"></div>'
+                    blueCount++;
                     break;
 
                 case -1:
                     piece = '<div class="green piece"></div>'
+                    greenCount++;
                     break;
 
                 default:;
@@ -119,13 +250,27 @@ function updateBoard(board) {
             cid++;
         }
     }
+
+    /* Update scores */
+    document.getElementById("green-score").innerHTML = greenCount;
+    document.getElementById("blue-score").innerHTML = blueCount;
+
+    /* Update turn indicators */
+    if (globalState.maximizing_player) {
+        document.getElementById("green-score-container").classList.remove("on-turn");
+        document.getElementById("blue-score-container").classList.add("on-turn");
+    } else {
+        document.getElementById("green-score-container").classList.add("on-turn");
+        document.getElementById("blue-score-container").classList.remove("on-turn");
+    }
 }
 function selfplay(state) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             let state = JSON.parse(this.responseText);
-            updateBoard(state.board);
+            globalState = state;
+            updateBoard();
             selfplay(state);
        }
     };
@@ -142,8 +287,8 @@ function scheduleComputerMove(state) {
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             let state = JSON.parse(this.responseText);
-            updateBoard(state.board);
             globalState = state
+            updateBoard();
             waitMove = false;
        }
     };
@@ -158,7 +303,7 @@ function newgame() {
         if (this.readyState == 4 && this.status == 200) {
             let state = JSON.parse(this.responseText);
             globalState = state
-            updateBoard(state.board);
+            updateBoard();
             //selfplay(state);
        }
     };
@@ -207,8 +352,8 @@ function makeMove(sourceCell, targetCell) {
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             let state = JSON.parse(this.responseText);
-            updateBoard(state.board);
             globalState = state
+            updateBoard();
 
             /* If we made a successful move, it is no longer our turn.
              * so schedule a computer move
