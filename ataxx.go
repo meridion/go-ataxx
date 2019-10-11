@@ -454,6 +454,30 @@ func (board *AtaxxBoard) Print() {
 	return
 }
 
+/* Convert board to bitboard */
+func (board *AtaxxBoard) ToBitboard() AtaxxBitboard {
+	var bit AtaxxBitboard
+
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
+			maskBit := SingleBitboard(1 << uint((y)*7+x))
+			switch board[y][x] {
+			case 1:
+				bit.maximizingPlayer |= maskBit
+				break
+
+			case -1:
+				bit.minimizingPlayer |= maskBit
+				break
+
+			default:
+			}
+		}
+	}
+
+	return bit
+}
+
 /* Perform a human player move */
 func HumanMove(game *AtaxxBoard, maximizingPlayer bool, srcX, srcY, tgtX, tgtY int) (bestBoard AtaxxBoard, valid bool) {
 	/* First some sanity checks on the user input */
@@ -856,6 +880,26 @@ func (board *AtaxxBitboard) Print() {
 	}
 
 	return
+}
+
+/* Convert board to bitboard */
+func (bit *AtaxxBitboard) ToBoard() AtaxxBoard {
+	var board AtaxxBoard
+
+	for y := 0; y < 7; y++ {
+		for x := 0; x < 7; x++ {
+			maskBit := SingleBitboard(1 << uint((y)*7+x))
+			if bit.maximizingPlayer&maskBit != 0 {
+				board[y][x] = 1
+			} else if bit.minimizingPlayer&maskBit != 0 {
+				board[y][x] = -1
+			} else {
+				board[y][x] = 0
+			}
+		}
+	}
+
+	return board
 }
 
 /* Print single bitboard */

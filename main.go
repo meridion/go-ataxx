@@ -11,6 +11,10 @@ import (
 
 func main() {
 	if true {
+		/* Setup pre-calculated bitboard tables */
+		InitBitboards()
+
+		/* Setup routes */
 		http.Handle("/", http.FileServer(http.Dir(".")))
 
 		http.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
@@ -38,12 +42,15 @@ func main() {
 				panic(err)
 			}
 
+			/* Convert to bitboard for higher performance */
+			bitboard := ply.Board.ToBitboard()
+
 			/* Compute next computer move */
-			newBoard, _ := AlphaBeta(&ply.Board, ply.MaximizingPlayer, 5, -49, 49)
+			newBoard, _ := AlphaBeta(&bitboard, ply.MaximizingPlayer, 5, -49, 49)
 
 			/* Return resulting game state */
 			var rply AtaxxPly
-			rply.Board = *(newBoard.(*AtaxxBoard))
+			rply.Board = newBoard.(*AtaxxBitboard).ToBoard()
 			rply.MaximizingPlayer = !ply.MaximizingPlayer
 
 			/* Marshal to JSON */
