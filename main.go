@@ -46,7 +46,7 @@ func main() {
 			bitboard := ply.Board.ToBitboard()
 
 			/* Compute next computer move */
-			newBoard, _ := AlphaBeta(&bitboard, ply.MaximizingPlayer, 5, -49, 49)
+			newBoard, _ := AlphaBeta(&bitboard, ply.MaximizingPlayer, 4, -49, 49)
 
 			/* Return resulting game state */
 			var rply AtaxxPly
