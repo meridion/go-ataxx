@@ -274,7 +274,7 @@ function selfplay(state) {
             selfplay(state);
        }
     };
-    xhttp.open("POST", "/ply", true);
+    xhttp.open("POST", "ply", true);
     xhttp.send(JSON.stringify(state));
 }
 /* FIXME: This function breaks on time-out
@@ -292,7 +292,7 @@ function scheduleComputerMove(state) {
             waitMove = false;
        }
     };
-    xhttp.open("POST", "/ply", true);
+    xhttp.open("POST", "ply", true);
     xhttp.send(JSON.stringify(state));
 }
 
@@ -307,7 +307,7 @@ function newgame() {
             //selfplay(state);
        }
     };
-    xhttp.open("GET", "/new", true);
+    xhttp.open("GET", "new", true);
     xhttp.send();
 }
 
@@ -364,7 +364,7 @@ function makeMove(sourceCell, targetCell) {
        }
     };
 
-    xhttp.open("POST", "/move", true);
+    xhttp.open("POST", "move", true);
     xhttp.send(JSON.stringify(move));
 }
 
